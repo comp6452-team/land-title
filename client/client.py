@@ -1,11 +1,5 @@
 import json
 from web3 import Web3
-from getpass import getpass
-from eth_utils import address
-from web3 import Web3
-import os
-# from solc import compile_standard, install_solc
-from dotenv import load_dotenv
 
 # Connect to a local Ethereum node (Ganache)
 web3 = Web3(Web3.HTTPProvider('http://localhost:8545'))
@@ -25,22 +19,19 @@ def register_title(private_key):
         "name": "randwick",
         "price": 250
     }
-# Convert data to hash string
+    # Convert data to hash string
     hash_data = web3.solidity_keccak(['string'], [json.dumps(data)])
-
 
     # Get the account address
     account_address = web3.eth.account.from_key(private_key).address
-    print(account_address)
-    # Get the nonce
-    nonce = web3.eth.get_transaction_count(account_address)
+    print("account: " + account_address)
 
     # Build the transaction
     txn_dict = contract.functions.registerTitle(hash_data.hex()).build_transaction({
         'chainId': 1337, # Replace with your network's chainId
         'gas': 500000,
         'gasPrice': web3.to_wei('20', 'gwei'),
-        'nonce': nonce,
+        'nonce': web3.eth.get_transaction_count(account_address),
     })
     # print(txn_dict)
     # # Sign the transaction
@@ -82,13 +73,37 @@ def transfer_title(token_id, to_address, from_private_key):
 
     # Wait for transaction to be mined and get the transaction receipt
     receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-
-    print(f"Transaction receipt: {receipt}")
+    from_address = receipt['from']
+    to_address = receipt['to']
+    print (f"Transfer from {from_address} to {to_address} successful")
+    # print(f"Transaction receipt: {receipt}")
 
     return receipt
 
 def get_title(token_id):
     contract.functions.getTitle()
+
+def verify_title(token_id, private_key):
+    account_address = web3.eth.account.from_key(private_key).address
+    # nonce = web3.eth.get_transaction_count(account_address)
+
+    # txn_dict = contract.functions.verifyTitle(int(token_id)).build_transaction({
+    #     'chainId': 1337, # Replace with your network's chainId
+    #     'gas': 500000,
+    #     'gasPrice': web3.to_wei('20', 'gwei'),
+    #     'nonce': nonce,
+    #     'from': account_address,
+    # })
+
+    # signed_txn = web3.eth.account.sign_transaction(txn_dict, private_key)
+
+    # # Send the transaction
+    # tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    # receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    # # response = contract.functions.verifyTitle(token_id).call()
+    # print(receipt)
+    response = contract.functions.verifyTitle(token_id).call({'from': account_address})
+
 
 if __name__ == "__main__":
     # network_id = web3.net.version
@@ -98,7 +113,7 @@ if __name__ == "__main__":
 
     #account 0
     # replace with the account0 private key
-    private_key = "0x8283f51fefb4703d508f0aebc37dcbbdea8d5e7553f3f8a4ebcf179c8d94ee87"
+    private_key = "0x7eb43f72f4b8e11613e872e773643127ead0072623ba9c0e3a7628b8487d9fa1"
 
     #account 1
     receiver_address = web3.eth.accounts[1]
@@ -113,8 +128,9 @@ if __name__ == "__main__":
             transfer_title(token_id, to_address, private_key)
             # to_private_key = "0x96b29ae05803ef66b8af63fb1509e98b4911aa276c28ce14d090de4a2fdee477"
             # transfer_title(token_id, receiver_address, private_key)
-        elif command == "get":
+        elif command == "verify":
+            token_id = input("Enter token id: ")
 
-            get_title(token_id)
+            verify_title(int(token_id), private_key)
 
     print("sender address: " + sender_address + "\nreceiver_address: " + receiver_address)

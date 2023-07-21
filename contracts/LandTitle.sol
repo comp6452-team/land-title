@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-
+import "truffle/Console.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -21,13 +21,13 @@ contract LandTitle is ERC721 {
     function registerTitle(string memory dataHash) public returns( uint256){
         _tokenIds.increment();
         uint256 tokenId = _tokenIds.current();
-
+        console.log(msg.sender);
         _mint(msg.sender, tokenId);
 
         _titleDetails[tokenId] = Title(dataHash);
-        return tokenId;
         // assign ownership to whoever calls function to register
         // transferToken(address(this), msg.sender, tokenId);
+        return tokenId;
     }
 
     // returns dataHash
@@ -39,6 +39,8 @@ contract LandTitle is ERC721 {
     // verify token
     function verifyTitle(uint256 tokenId) public view returns (bool) {
         require(_exists(tokenId), "ERC721: queried token does not exist");
+        // return ownerOf(tokenId) == msg.sender;
+        console.log(msg.sender);
         return ownerOf(tokenId) == msg.sender;
     }
 
@@ -47,7 +49,7 @@ contract LandTitle is ERC721 {
     function transferTitle(uint256 tokenId, address newOwner) public {
         require(_exists(tokenId), "ERC721: queried token does not exist");
         require(ownerOf(tokenId) == msg.sender, "ERC721: sender is not the owner");
-
+        console.log(msg.sender);
         transferToken(msg.sender, newOwner, tokenId);
     }
 
