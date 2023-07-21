@@ -19,3 +19,9 @@ print(response)
 # # Fetch the latest block
 latest_block = web3.eth.get_block('latest')
 print(latest_block)
+
+# register title, print result
+
+# create two parties (two accounts)
+
+# transfer token and print the two accounts showing transfer
