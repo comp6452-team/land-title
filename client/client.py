@@ -5,23 +5,18 @@ from web3 import Web3
 web3 = Web3(Web3.HTTPProvider('http://localhost:8545'))
 
 truffleFile = json.load(open('./build/contracts/LandTitle.json'))
-contract_abi = truffleFile['abi']
 
-# Contract address
+contract_abi = truffleFile['abi']
 contract_address = "0x274C9565b080DB5A2F418a03e3072C6DACbe1Dfe"
 
 # Load the contract
 contract = web3.eth.contract(address=contract_address, abi=contract_abi)
 
-response = contract.functions.registerTitle(1, "abc")
-print(response)
+def register_title(token_id, data_hash, private_key):
+    contract.functions.registerTitle()
 
-# # Fetch the latest block
-latest_block = web3.eth.get_block('latest')
-print(latest_block)
+if __name__ == "__main__":
+    sender_address = web3.eth.accounts[0]
+    receiver_address = web3.eth.accounts[1]
 
-# register title, print result
-
-# create two parties (two accounts)
-
-# transfer token and print the two accounts showing transfer
+    print("sender address: " + sender_address + "\nreceiver_address: " + receiver_address)

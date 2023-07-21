@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT 
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -5,6 +6,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract LandTitle is ERC721 {
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIds;
+
     struct Title {
         string dataHash;
     }
@@ -14,8 +18,9 @@ contract LandTitle is ERC721 {
     constructor() ERC721("LandTitle", "LTT") {}
 
     // registers new Title as a token
-    function registerTitle(uint256 tokenId, string memory dataHash) public {
-        require(!_exists(tokenId), "ERC721: token already minted");
+    function registerTitle(string memory dataHash) public {
+        _tokenIds.increment();
+        uint256 tokenId = _tokenIds.current();
 
         _mint(msg.sender, tokenId);
 
@@ -44,18 +49,9 @@ contract LandTitle is ERC721 {
         require(ownerOf(tokenId) == msg.sender, "ERC721: sender is not the owner");
 
         transferToken(msg.sender, newOwner, tokenId);
-        // _transfer(msg.sender, newOwner, tokenId);
     }
 
     function transferToken(address owner, address newOwner, uint256 tokenId) private {
         _transfer(owner, newOwner, tokenId);
     }
-
-    // /**
-    // * @notice Only the owner can do
-    // */
-    // modifier owner(uint256 tokenId) {
-    //     require(ownerOf(tokenId) == msg.sender, "ERC721: sender is not the owner");
-    //     _;
-    // }
 }
