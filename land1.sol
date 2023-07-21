@@ -14,19 +14,14 @@ contract propertiesRegistration{
         address payable  CurrentOwner;
         bool isAvailable;
         uint24 value;
-        
+
     }
-
-
-
-
-
     uint24 number=0;
     mapping(bytes32 => property) properties;
     address payable authority;
     mapping(address => user) users;
     bytes32[] propertiesList;
-    
+
     //contract owner
     constructor() public{
         authority = payable(msg.sender);
@@ -35,13 +30,13 @@ contract propertiesRegistration{
         require(msg.sender == authority,"no rights");
         _;
     }
-    
+
 
     //Registration of properties details.
     function Registration(string memory _city,string memory _district,
         string memory _detail, address payable _OwnerAddress
         ) public onlyOwner returns(bool) {
-        
+
         bytes32 id=keccak256(abi.encodePacked(number, block.timestamp));
         properties[id].city = _city;
         properties[id].district = _district;
@@ -61,19 +56,19 @@ contract propertiesRegistration{
     function propertyInfoByBytes(bytes32 id) public view returns(string memory,string memory,string memory,bool,address){
         return(properties[id].city,properties[id].district,properties[id].detail,properties[id].isAvailable,properties[id].CurrentOwner);
     }
-    
-    
-    
+
+
+
     function userInfo()public view returns(bytes32[] memory){
         return (users[msg.sender].assets);
     }
 
-    
+
     function setAvailable(bytes32 property,uint24 _value)public{
         require(properties[property].CurrentOwner == msg.sender);
         properties[property].isAvailable=true;
         properties[property].value=_value;
-    } 
+    }
     //buying the approved property
     function buyProperty(bytes32 property)public payable{
         require(properties[property].isAvailable == true, "property not available");
@@ -83,7 +78,7 @@ contract propertiesRegistration{
         removeOwnership(properties[property].CurrentOwner,property);
         properties[property].CurrentOwner=payable(msg.sender);
         users[msg.sender].assets.push(property);
-        
+
     }
 
     function paytax()public payable {
