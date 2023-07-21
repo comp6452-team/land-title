@@ -62,32 +62,57 @@ def register_title(private_key):
     return receipt
 
 
-def transfer_title(token_id, to_address, private_key):
-    
+def transfer_title(token_id, to_address, from_private_key):
+    # Get the account address from the private key
+    account_address = web3.eth.account.from_key(from_private_key).address
+
     nonce = web3.eth.get_transaction_count(account_address)
-    contract.functions.transferTitle(token_id, to_address).build_transaction({
+    txn_dict = contract.functions.transferTitle(int(token_id), web3.to_checksum_address(to_address)).build_transaction({
         'chainId': 1337, # Replace with your network's chainId
         'gas': 500000,
         'gasPrice': web3.to_wei('20', 'gwei'),
         'nonce': nonce,
     })
 
+    # Sign the transaction
+    signed_txn = web3.eth.account.sign_transaction(txn_dict, from_private_key)
+
+    # Send the transaction
+    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+
+    # Wait for transaction to be mined and get the transaction receipt
+    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+
+    print(f"Transaction receipt: {receipt}")
+
+    return receipt
+
 def get_title(token_id):
     contract.functions.getTitle()
 
 if __name__ == "__main__":
-    network_id = web3.net.version
-    print(network_id)
+    # network_id = web3.net.version
+    # print(network_id)
+    #account 0
     sender_address = web3.eth.accounts[0]
+
+    #account 0
+    # replace with the account0 private key
     private_key = "0x8283f51fefb4703d508f0aebc37dcbbdea8d5e7553f3f8a4ebcf179c8d94ee87"
+
+    #account 1
     receiver_address = web3.eth.accounts[1]
+    print(receiver_address)
     while True:
         command = input("Enter command: ")
         if command == "register":
             register_title(private_key)
         elif command == "transfer":
             token_id = input("Enter token id: ")
-            transfer_title(token_id, receiver_address, private_key)
+            to_address = input("Enter receiver address: ")
+            transfer_title(token_id, to_address, private_key)
+            # to_private_key = "0x96b29ae05803ef66b8af63fb1509e98b4911aa276c28ce14d090de4a2fdee477"
+            # transfer_title(token_id, receiver_address, private_key)
         elif command == "get":
 
             get_title(token_id)
