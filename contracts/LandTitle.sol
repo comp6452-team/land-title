@@ -18,16 +18,16 @@ contract LandTitle is ERC721 {
     constructor() ERC721("LandTitle", "LTT") {}
 
     // registers new Title as a token
-    function registerTitle(string memory dataHash) public {
+    function registerTitle(string memory dataHash) public returns( uint256){
         _tokenIds.increment();
         uint256 tokenId = _tokenIds.current();
 
         _mint(msg.sender, tokenId);
 
         _titleDetails[tokenId] = Title(dataHash);
-
+        return tokenId;
         // assign ownership to whoever calls function to register
-        transferToken(address(this), msg.sender, tokenId);
+        // transferToken(address(this), msg.sender, tokenId);
     }
 
     // returns dataHash
