@@ -22,6 +22,7 @@ contract LandTitle is ERC721 {
         _titleDetails[tokenId] = Title(dataHash);
 
         // assign ownership to whoever calls function to register
+        transferToken(address(this), msg.sender, tokenId);
     }
 
     // returns dataHash
@@ -31,21 +32,30 @@ contract LandTitle is ERC721 {
     }
 
     // verify token
-    function verifyTitle(uint256 tokenId) public {
-
+    function verifyTitle(uint256 tokenId) public view returns (bool) {
+        require(_exists(tokenId), "ERC721: queried token does not exist");
+        return ownerOf(tokenId) == msg.sender;
     }
 
     // transfer token from caller to address given
     // owner = msg.sender, newOwner = given address
-    function transferTitle(uint256 tokenId, address newOwner) public owner(tokenId) {
-
-    }
-
-    /**
-    * @notice Only the owner can do
-    */
-    modifier owner(uint256 tokenId) {
+    function transferTitle(uint256 tokenId, address newOwner) public {
+        require(_exists(tokenId), "ERC721: queried token does not exist");
         require(ownerOf(tokenId) == msg.sender, "ERC721: sender is not the owner");
-        _;
+
+        transferToken(msg.sender, newOwner, tokenId);
+        // _transfer(msg.sender, newOwner, tokenId);
     }
+
+    function transferToken(address owner, address newOwner, uint256 tokenId) private {
+        _transfer(owner, newOwner, tokenId);
+    }
+
+    // /**
+    // * @notice Only the owner can do
+    // */
+    // modifier owner(uint256 tokenId) {
+    //     require(ownerOf(tokenId) == msg.sender, "ERC721: sender is not the owner");
+    //     _;
+    // }
 }
