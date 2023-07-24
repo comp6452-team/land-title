@@ -10,10 +10,11 @@ w3 = Web3(Web3.HTTPProvider('http://localhost:8545'))
 # Replace with the private key of the oracle account
 private_key = '0xaefcaad212aba1ac9c96f94f5dcef495467fb745179976fbe31711bc559fedcf'
 
-truffleFile = json.load(open('./build/contracts/LandTitle.json'))
+truffleFile = json.load(open('./build/contracts/Escrow.json'))
 contract_abi = truffleFile['abi']
-latest_timestamp = max(truffleFile["networks"].keys())
-contract_address = truffleFile["networks"][latest_timestamp]["address"]
+# latest_timestamp = max(truffleFile["networks"].keys())
+# contract_address = truffleFile["networks"][latest_timestamp]["address"]
+contract_address = "0x1e16c152937A0d98f8a87ff03E24e48eC6f32342"
 
 def handle_payment():
     escrow_contract = w3.eth.contract(address=contract_address, abi=contract_abi)
@@ -31,7 +32,8 @@ def handle_payment():
 
 
 if __name__ == '__main__':
-    event_filter = w3.eth.contract(address=contract_address, abi=contract_abi).events.CheckPayment.createFilter(fromBlock='latest', topics=[Web3.sha3(text='CheckPayment')])
+    # event_filter = w3.eth.contract(address=contract_address, abi=contract_abi).events.CheckPayment.create_filter(fromBlock='latest', topics=[Web3.sha3(text='CheckPayment')])
+    event_filter = w3.eth.contract(address=contract_address, abi=contract_abi).events.CheckPayment.create_filter(fromBlock='latest', topics=[w3.keccak(text='CheckPayment')])
 
     while True:
         command = input("Payment complete (true or false): ")
