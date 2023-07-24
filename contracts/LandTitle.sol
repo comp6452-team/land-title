@@ -43,9 +43,9 @@ contract LandTitle is ERC721 {
     }
 
     // transfer token from caller to address given
-    function transferTitle(address newOwner, uint256 tokenId) public {
+    function transferTitle(address owner, address newOwner, uint256 tokenId) public {
         require(_exists(tokenId), "ERC721: queried token does not exist");
-        require(ownerOf(tokenId) == msg.sender, "ERC721: sender is not the owner");
+        require(ownerOf(tokenId) == owner, "ERC721: owner is not the owner");
         // console.log(msg.sender);
         transferToken(msg.sender, newOwner, tokenId);
     }
