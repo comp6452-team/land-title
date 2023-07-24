@@ -114,10 +114,14 @@ def verify_title(token_id, account_address):
 
 
 if __name__ == "__main__":
-
+    #account 0
     sender_address = web3.eth.accounts[0]
 
-    sender_private_key="0xaefcaad212aba1ac9c96f94f5dcef495467fb745179976fbe31711bc559fedcf"
+    #account 0
+    #######################################
+    # replace with the account0 private key in the local ganache
+    ########################################
+    private_key = "0x7eb43f72f4b8e11613e872e773643127ead0072623ba9c0e3a7628b8487d9fa1"
 
     while True:
         command = input("Enter command: ")
