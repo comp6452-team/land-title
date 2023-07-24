@@ -18,12 +18,9 @@ def input_data():
     property_details['owner'] = input("Enter the name of the property owner: ")
     property_details['address'] = input("Enter the address of the property: ")
     property_details['area'] = input("Enter the area of the property in square feet: ")
-    # property_details['location'] = input("Enter the location of the property: ")
     return property_details
 
 def store_data_in_db(token_id, property_details):
-
-
     conn = sqlite3.connect('database.db')  # This will create a new sqlite file if it doesn't exist
     cursor = conn.cursor()
 
@@ -47,10 +44,7 @@ def store_data_in_db(token_id, property_details):
 
 def register_title(private_key):
     data = input_data()
-    # data = {
-    #     "name": "randwick",
-    #     "price": 250
-    # }
+
     # Convert data to hash string
     hash_data = web3.solidity_keccak(['string'], [json.dumps(data)])
 
@@ -65,7 +59,7 @@ def register_title(private_key):
         'gasPrice': web3.to_wei('20', 'gwei'),
         'nonce': web3.eth.get_transaction_count(account_address),
     })
-    # print(txn_dict)
+
     # # Sign the transaction
     signed_txn = web3.eth.account.sign_transaction(txn_dict, private_key)
 
@@ -80,7 +74,6 @@ def register_title(private_key):
     token_id = logs[0]['args']['tokenId']
     store_data_in_db(token_id, data)
     print(f"Newly minted token ID: {token_id}")
-    # print(f"Transaction receipt: {receipt}")
 
     return receipt
 
@@ -108,7 +101,6 @@ def transfer_title(token_id, to_address, from_private_key):
     from_address = receipt['from']
     to_address = receipt['to']
     print (f"Transfer from {from_address} to {to_address} successful")
-    # print(f"Transaction receipt: {receipt}")
 
     return receipt
 
@@ -117,34 +109,24 @@ def get_title(token_id):
     print(response)
 
 def verify_title(token_id, account_address):
-    # account_address = web3.eth.account.from_key(private_key).address
     response = contract.functions.verifyTitle(token_id).call({'from': account_address})
     print(response)
 
 
 if __name__ == "__main__":
-    # network_id = web3.net.version
-    # print(network_id)
-    #account 0
+
     sender_address = web3.eth.accounts[0]
 
-    #account 0
-    # replace with the account0 private key
-    private_key = "0x7eb43f72f4b8e11613e872e773643127ead0072623ba9c0e3a7628b8487d9fa1"
+    sender_private_key="0xaefcaad212aba1ac9c96f94f5dcef495467fb745179976fbe31711bc559fedcf"
 
-    #account 1
-    receiver_address = web3.eth.accounts[1]
-    print(receiver_address)
     while True:
         command = input("Enter command: ")
         if command == "register":
-            register_title(private_key)
+            register_title(sender_private_key)
         elif command == "transfer":
             token_id = input("Enter token id: ")
             to_address = input("Enter receiver address: ")
-            transfer_title(token_id, to_address, private_key)
-            # to_private_key = "0x96b29ae05803ef66b8af63fb1509e98b4911aa276c28ce14d090de4a2fdee477"
-            # transfer_title(token_id, receiver_address, private_key)
+            transfer_title(token_id, to_address, sender_private_key)
         elif command == "verify":
             token_id = input("Enter token id: ")
             account_address = input("Enter account address: ")
@@ -152,4 +134,3 @@ if __name__ == "__main__":
         elif command == "get":
             token_id = input("Enter token id: ")
             get_title(int(token_id))
-    print("sender address: " + sender_address + "\nreceiver_address: " + receiver_address)

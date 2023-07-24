@@ -2,34 +2,44 @@ import sys
 from web3 import Web3
 from json import dumps
 from time import sleep
+import json
 
 # Replace with the actual address of the Ethereum node
 w3 = Web3(Web3.HTTPProvider('http://localhost:8545'))
 
 # Replace with the private key of the oracle account
-private_key = 'YOUR_PRIVATE_KEY'
+private_key = '0xaefcaad212aba1ac9c96f94f5dcef495467fb745179976fbe31711bc559fedcf'
 
-# Replace with the actual contract address and ABI
-contract_address = '0x123456789ABCDEF'  # Replace with the contract address
-contract_abi = [...]  # Replace with the contract ABI
+truffleFile = json.load(open('./build/contracts/LandTitle.json'))
+contract_abi = truffleFile['abi']
+latest_timestamp = max(truffleFile["networks"].keys())
+contract_address = truffleFile["networks"][latest_timestamp]["address"]
 
-def handle_payment(event, payment_received):
-    
+def handle_payment():
+    escrow_contract = w3.eth.contract(address=contract_address, abi=contract_abi)
+    transaction = escrow_contract.functions.paymentReceived().buildTransaction({
+        'gas': 2000000,
+        'gasPrice': w3.toWei('40', 'gwei'),
+        'nonce': w3.eth.getTransactionCount(w3.eth.defaultAccount),
+    })
+
+    signed_transaction = w3.eth.account.signTransaction(transaction, private_key)
+    tx_hash = w3.eth.sendRawTransaction(signed_transaction.rawTransaction)
+    tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+
+    print(f"Transaction Hash: {tx_receipt.transactionHash.hex()}")
+
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("Please enter the payment status ('true' or 'false') as a command line argument.")
-        sys.exit(1)
-
-    payment_received = sys.argv[1]
-    if payment_received.lower() not in ['true', 'false']:
-        print("Invalid payment status. Please enter 'true' or 'false'.")
-        sys.exit(1)
-
-    # Replace 'CheckPayment' with the actual event name
     event_filter = w3.eth.contract(address=contract_address, abi=contract_abi).events.CheckPayment.createFilter(fromBlock='latest', topics=[Web3.sha3(text='CheckPayment')])
 
     while True:
+        command = input("Payment complete (true or false): ")
+        value = False
+        if command == "true":
+            value = True
+
         for event in event_filter.get_new_entries():
-            handle_payment(event, payment_received)
+            if value == True:
+                handle_payment(event, value)
         sleep(2)  # Check for new events every 2 seconds
