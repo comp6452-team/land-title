@@ -1,5 +1,5 @@
 import json
-from web3 import Web3
+from web3 import Web3, utils
 import sqlite3
 # Connect to a local Ethereum node (Ganache)
 web3 = Web3(Web3.HTTPProvider('http://localhost:8545'))
@@ -9,14 +9,15 @@ lt_truffle_file = json.load(open('./build/contracts/LandTitle.json'))
 lt_abi = lt_truffle_file['abi']
 # get address from network in trufleFile, it is the last address in the dictionary
 latest_timestamp = max(lt_truffle_file["networks"].keys())
-contract_address = lt_truffle_file["networks"][latest_timestamp]["address"]
+lt_contract_address = lt_truffle_file["networks"][latest_timestamp]["address"]
 
 # Load the contract
-lt_contract = web3.eth.contract(address=contract_address, abi=lt_abi)
+lt_contract = web3.eth.contract(address=lt_contract_address, abi=lt_abi)
 
 escrow_truffle_file = json.load(open('./build/contracts/Escrow.json'))
 escrow_abi = escrow_truffle_file['abi']
-escrow_contract = web3.eth.contract(address=contract_address, abi=escrow_abi)
+escrow_contract_address = escrow_truffle_file['networks']['1337']['address']
+escrow_contract = web3.eth.contract(address=escrow_contract_address, abi=escrow_abi)
 
 def input_data():
     property_details = {}
@@ -88,53 +89,61 @@ def transfer_title(token_id, to_address, from_private_key):
     oracle_address = web3.eth.accounts[2]
 
     # set the contract address
-    tx_contract_hash = escrow_contract.functions.setLandTitleContract(contract_address).build_transaction({
-        'chainId': 1337,
-        'gas': 500000,
-        'gasPrice': web3.to_wei('20', 'gwei'),
-        'nonce': web3.eth.get_transaction_count(from_account_address),
-        'from': from_account_address
-        })
-    tx_hash = web3.eth.send_transaction(tx_contract_hash)
-    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-
-    # signed_txn = web3.eth.account.sign_transaction(tx_contract_hash, private_key)
-    # tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    # tx_contract_hash = escrow_contract.functions.setLandTitleContract(contract_address).build_transaction({
+    #     'chainId': 1337,
+    #     'gas': 500000,
+    #     'gasPrice': web3.to_wei('20', 'gwei'),
+    #     'nonce': web3.eth.get_transaction_count(from_account_address),
+    #     'from': from_account_address
+    #     })
+    # tx_hash = web3.eth.send_transaction(tx_contract_hash)
     # receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     
-    print(receipt)
+    # print(receipt)
 
-    tx_oracle_hash = escrow_contract.functions.setOracle(oracle_address).build_transaction({
-        'chainId': 1337,
-        'gas': 500000,
-        'gasPrice': web3.to_wei('20', 'gwei'),
-        'nonce': web3.eth.get_transaction_count(from_account_address),
-        'from': from_account_address})
+    # tx_oracle_hash = escrow_contract.functions.setOracle(oracle_address).build_transaction({
+    #     'chainId': 1337,
+    #     'gas': 500000,
+    #     'gasPrice': web3.to_wei('20', 'gwei'),
+    #     'nonce': web3.eth.get_transaction_count(from_account_address),
+    #     'from': from_account_address})
 
-    tx_hash = web3.eth.send_transaction(tx_oracle_hash)
-    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    print(receipt)
+    # tx_hash = web3.eth.send_transaction(tx_oracle_hash)
+    # receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    # print(receipt)
 
     # release
-    release(token_id, from_account_address)
+    release(token_id, from_account_address, to_address)
 
     # redeem
     redeem(token_id, to_address)
 
-def release(token_id, address):
+    # tx_check_hash = escrow_contract.functions.emitCheckPayment().build_transaction({
+    #     'chainId': 1337,
+    #     'gas': 500000,
+    #     'gasPrice': web3.to_wei('20', 'gwei'),
+    #     'nonce': web3.eth.get_transaction_count(from_account_address),
+    #     'from': from_account_address})
+    
+    # tx_hash = web3.eth.send_transaction(tx_check_hash)
+    # receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    # print(receipt)
 
-    txn_dict = escrow_contract.functions.release(address, int(token_id)).build_transaction({
+def release(token_id, from_address, to_address):
+    oracle_address = web3.eth.accounts[2]
+    # make sure lt contract address is correct
+    txn_dict = escrow_contract.functions.release(web3.to_checksum_address(to_address), int(token_id), lt_contract_address, web3.to_checksum_address(oracle_address)).build_transaction({
         'chainId': 1337,
         'gas': 500000,
         'gasPrice': web3.to_wei('20', 'gwei'),
-        'nonce': web3.eth.get_transaction_count(address),
-        'from': address
+        'nonce': web3.eth.get_transaction_count(from_address),
+        'from': from_address
     })
 
     tx_hash = web3.eth.send_transaction(txn_dict)
     receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    
     print(receipt)
+    print("Token " + str(token_id) + " released by " + from_address + " to " + to_address)
 
 def redeem(token_id, to_address):
     
@@ -149,13 +158,26 @@ def redeem(token_id, to_address):
     tx_hash = web3.eth.send_transaction(txn_dict)
     receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     print(receipt)
-    print("redeem called")
+    print("Token " + str(token_id) + " redeemed by " + to_address)
 
 def get_title(token_id):
+    
     response = lt_contract.functions.getTitleDetails(token_id).call()
     print(response)
 
 def verify_title(token_id, account_address):
+    # txn_dict = lt_contract.functions.verifyTitle(int(token_id)).build_transaction({
+    #     'chainId': 1337,
+    #     'gas': 500000,
+    #     'gasPrice': web3.to_wei('20', 'gwei'),
+    #     'nonce': web3.eth.get_transaction_count(account_address),
+    #     'from': account_address
+    # })
+    
+    # tx_hash = web3.eth.send_transaction(txn_dict)
+    # receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    # print(receipt)
+
     response = lt_contract.functions.verifyTitle(token_id).call({'from': account_address})
     print(response)
 
