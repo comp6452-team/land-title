@@ -1,0 +1,4 @@
+build
+node_modules
+client/__pycache__
+database.db

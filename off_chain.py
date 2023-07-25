@@ -16,6 +16,9 @@ abi = truffleFile['abi']
 bytecode = truffleFile['bytecode']
 contract_address = "0x8B784c484e80E9164C40e138a38d58040bEce87A"
 contract = w3.eth.contract(address=contract_address, abi=abi)
+
+# convert dictionary to hash
+
 response = contract.functions.addProperty("randwick", 250)
 print(response)
 
