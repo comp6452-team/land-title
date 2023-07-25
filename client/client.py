@@ -4,15 +4,20 @@ import sqlite3
 # Connect to a local Ethereum node (Ganache)
 web3 = Web3(Web3.HTTPProvider('http://localhost:8545'))
 
-truffleFile = json.load(open('./build/contracts/LandTitle.json'))
+lt_truffle_file = json.load(open('./build/contracts/LandTitle.json'))
 
-contract_abi = truffleFile['abi']
+lt_abi = lt_truffle_file['abi']
 # get address from network in trufleFile, it is the last address in the dictionary
-latest_timestamp = max(truffleFile["networks"].keys())
-contract_address = truffleFile["networks"][latest_timestamp]["address"]
+latest_timestamp = max(lt_truffle_file["networks"].keys())
+contract_address = lt_truffle_file["networks"][latest_timestamp]["address"]
 
 # Load the contract
-contract = web3.eth.contract(address=contract_address, abi=contract_abi)
+lt_contract = web3.eth.contract(address=contract_address, abi=lt_abi)
+
+escrow_truffle_file = json.load(open('./build/contracts/Escrow.json'))
+escrow_abi = escrow_truffle_file['abi']
+escrow_contract = web3.eth.contract(address=contract_address, abi=escrow_abi)
+
 def input_data():
     property_details = {}
     property_details['owner'] = input("Enter the name of the property owner: ")
@@ -53,7 +58,7 @@ def register_title(private_key):
     print("account: " + account_address)
 
     # Build the transaction
-    txn_dict = contract.functions.registerTitle(hash_data.hex()).build_transaction({
+    txn_dict = lt_contract.functions.registerTitle(hash_data.hex()).build_transaction({
         'chainId': 1337, # Replace with your network's chainId
         'gas': 500000,
         'gasPrice': web3.to_wei('20', 'gwei'),
@@ -68,7 +73,7 @@ def register_title(private_key):
 
     # # Wait for transaction to be mined and get the transaction receipt
     receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    logs = contract.events.Transfer().process_receipt(receipt)
+    logs = lt_contract.events.Transfer().process_receipt(receipt)
 
     # Extract the token ID from the logs
     token_id = logs[0]['args']['tokenId']
@@ -79,37 +84,79 @@ def register_title(private_key):
 
 
 def transfer_title(token_id, to_address, from_private_key):
-    # Get the account address from the private key
-    account_address = web3.eth.account.from_key(from_private_key).address
+    from_account_address = web3.eth.account.from_key(from_private_key).address
+    oracle_address = web3.eth.accounts[2]
 
-    nonce = web3.eth.get_transaction_count(account_address)
-    txn_dict = contract.functions.transferTitle(int(token_id), web3.to_checksum_address(to_address)).build_transaction({
-        'chainId': 1337, # Replace with your network's chainId
+    # set the contract address
+    tx_contract_hash = escrow_contract.functions.setLandTitleContract(contract_address).build_transaction({
+        'chainId': 1337,
         'gas': 500000,
         'gasPrice': web3.to_wei('20', 'gwei'),
-        'nonce': nonce,
+        'nonce': web3.eth.get_transaction_count(from_account_address),
+        'from': from_account_address
+        })
+    tx_hash = web3.eth.send_transaction(tx_contract_hash)
+    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+
+    # signed_txn = web3.eth.account.sign_transaction(tx_contract_hash, private_key)
+    # tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+    # receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    
+    print(receipt)
+
+    tx_oracle_hash = escrow_contract.functions.setOracle(oracle_address).build_transaction({
+        'chainId': 1337,
+        'gas': 500000,
+        'gasPrice': web3.to_wei('20', 'gwei'),
+        'nonce': web3.eth.get_transaction_count(from_account_address),
+        'from': from_account_address})
+
+    tx_hash = web3.eth.send_transaction(tx_oracle_hash)
+    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    print(receipt)
+
+    # release
+    release(token_id, from_account_address)
+
+    # redeem
+    redeem(token_id, to_address)
+
+def release(token_id, address):
+
+    txn_dict = escrow_contract.functions.release(address, int(token_id)).build_transaction({
+        'chainId': 1337,
+        'gas': 500000,
+        'gasPrice': web3.to_wei('20', 'gwei'),
+        'nonce': web3.eth.get_transaction_count(address),
+        'from': address
     })
 
-    # Sign the transaction
-    signed_txn = web3.eth.account.sign_transaction(txn_dict, from_private_key)
-
-    # Send the transaction
-    tx_hash = web3.eth.send_raw_transaction(signed_txn.rawTransaction)
-
-    # Wait for transaction to be mined and get the transaction receipt
+    tx_hash = web3.eth.send_transaction(txn_dict)
     receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    from_address = receipt['from']
-    to_address = receipt['to']
-    print (f"Transfer from {from_address} to {to_address} successful")
+    
+    print(receipt)
 
-    return receipt
+def redeem(token_id, to_address):
+    
+    txn_dict = escrow_contract.functions.redeem(int(token_id)).build_transaction({
+        'chainId': 1337,
+        'gas': 500000,
+        'gasPrice': web3.to_wei('20', 'gwei'),
+        'nonce': web3.eth.get_transaction_count(to_address),
+        'from': to_address
+    })
+
+    tx_hash = web3.eth.send_transaction(txn_dict)
+    receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
+    print(receipt)
+    print("redeem called")
 
 def get_title(token_id):
-    response = contract.functions.getTitleDetails(token_id).call()
+    response = lt_contract.functions.getTitleDetails(token_id).call()
     print(response)
 
 def verify_title(token_id, account_address):
-    response = contract.functions.verifyTitle(token_id).call({'from': account_address})
+    response = lt_contract.functions.verifyTitle(token_id).call({'from': account_address})
     print(response)
 
 
@@ -118,6 +165,7 @@ if __name__ == "__main__":
     sender_address = web3.eth.accounts[0]
 
     sender_private_key="0xaefcaad212aba1ac9c96f94f5dcef495467fb745179976fbe31711bc559fedcf"
+    receiver_private_key=""
 
     while True:
         command = input("Enter command: ")
@@ -125,8 +173,8 @@ if __name__ == "__main__":
             register_title(sender_private_key)
         elif command == "transfer":
             token_id = input("Enter token id: ")
-            to_address = input("Enter receiver address: ")
-            transfer_title(token_id, to_address, sender_private_key)
+            receiver_address = input("Enter receiver address: ")
+            transfer_title(int(token_id), receiver_address, sender_private_key)
         elif command == "verify":
             token_id = input("Enter token id: ")
             account_address = input("Enter account address: ")
