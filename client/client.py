@@ -98,7 +98,7 @@ def transfer_title(token_id, to_address, from_private_key):
     #     })
     # tx_hash = web3.eth.send_transaction(tx_contract_hash)
     # receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
-    
+
     # print(receipt)
 
     # tx_oracle_hash = escrow_contract.functions.setOracle(oracle_address).build_transaction({
@@ -124,7 +124,7 @@ def transfer_title(token_id, to_address, from_private_key):
     #     'gasPrice': web3.to_wei('20', 'gwei'),
     #     'nonce': web3.eth.get_transaction_count(from_account_address),
     #     'from': from_account_address})
-    
+
     # tx_hash = web3.eth.send_transaction(tx_check_hash)
     # receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     # print(receipt)
@@ -146,7 +146,7 @@ def release(token_id, from_address, to_address):
     print("Token " + str(token_id) + " released by " + from_address + " to " + to_address)
 
 def redeem(token_id, to_address):
-    
+
     txn_dict = escrow_contract.functions.redeem(int(token_id)).build_transaction({
         'chainId': 1337,
         'gas': 500000,
@@ -161,7 +161,7 @@ def redeem(token_id, to_address):
     print("Token " + str(token_id) + " redeemed by " + to_address)
 
 def get_title(token_id):
-    
+
     response = lt_contract.functions.getTitleDetails(token_id).call()
     print(response)
 
@@ -173,7 +173,7 @@ def verify_title(token_id, account_address):
     #     'nonce': web3.eth.get_transaction_count(account_address),
     #     'from': account_address
     # })
-    
+
     # tx_hash = web3.eth.send_transaction(txn_dict)
     # receipt = web3.eth.wait_for_transaction_receipt(tx_hash)
     # print(receipt)
@@ -186,8 +186,11 @@ if __name__ == "__main__":
     #account 0
     sender_address = web3.eth.accounts[0]
 
-    sender_private_key="0xaefcaad212aba1ac9c96f94f5dcef495467fb745179976fbe31711bc559fedcf"
-    receiver_private_key=""
+    #account 0
+    #######################################
+    # replace with the account0 private key in the local ganache
+    ########################################
+    sender_private_key = "0x7eb43f72f4b8e11613e872e773643127ead0072623ba9c0e3a7628b8487d9fa1"
 
     while True:
         command = input("Enter command: ")
