@@ -161,7 +161,7 @@ def verify_title(token_id, account_address):
 
 
 if __name__ == "__main__":
-
+    #account 0
     sender_address = web3.eth.accounts[0]
 
     sender_private_key="0xaefcaad212aba1ac9c96f94f5dcef495467fb745179976fbe31711bc559fedcf"
