@@ -14,26 +14,25 @@ contract Escrow {
 
     event CheckPayment(address funder, address beneficiary, uint256 titleId);
 
-    constructor(address _beneficiary, address _oracle, address _landTitleContract, uint256 _titleId) {
+    constructor() {
         funder = msg.sender;
-        beneficiary = _beneficiary;
-        oracle = _oracle;
-        landTitleContract = _landTitleContract;
-        titleId = _titleId;
         titleReleased = false;
     }
 
-    function redeem() public {
+    function redeem(uint256 _titleId) public {
         require(msg.sender == beneficiary, 'Only beneficiary can call');
-        require(titleReleased, 'Title has been released');  
+        require(titleReleased, 'Title has been released');
+        require(titleId == _titleId, 'Title is correct Title');
 
         emit CheckPayment(funder, beneficiary, titleId);
     }
 
-    function release() public {
+    function release(address _beneficiary, uint256 _titleId) public {
         require(msg.sender == funder, 'Only funder can call');
         require(!titleReleased, 'Title has not been released');  
 
+        beneficiary = _beneficiary;
+        titleId = _titleId;
         titleReleased = true;
     }
 
@@ -42,5 +41,13 @@ contract Escrow {
         require(titleReleased, 'Title has not been released yet');
 
         LandTitle(landTitleContract).transferTitle(funder, beneficiary, titleId);
+    }
+
+    function setOracle(address _oracle) public {
+        oracle = _oracle;
+    }
+
+    function setLandTitleContract(address _landTitleContract) public {
+        landTitleContract = _landTitleContract;
     }
 }
